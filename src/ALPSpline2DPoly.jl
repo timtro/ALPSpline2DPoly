@@ -175,8 +175,8 @@ function evaluate(seg::LinearSegment, s::Unitful.Length)::Vec2
   seg.p0 + t * (seg.p1 - seg.p0)
 end
 
-(seg::LinearSegment)(t::UnitParam) = evaluate(seg, t)
-(seg::LinearSegment)(s::Unitful.Length) = evaluate(seg, s)
+(γ::LinearSegment)(t::UnitParam) = evaluate(γ, t)
+(γ::LinearSegment)(s::Unitful.Length) = evaluate(γ, s)
 
 
 function evaluate(seg::CubicBezierSegment, t::UnitParam)::Vec2
@@ -188,6 +188,6 @@ function evaluate(seg::CubicBezierSegment, s::Unitful.Length)::Vec2
   return evaluate(seg, s_to_t(seg, s))
 end
 
-(seg::CubicBezierSegment)(t::UnitParam) = evaluate(seg, t)
-(seg::CubicBezierSegment)(s::Unitful.Length) = evaluate(seg, s)
+(γ::CubicBezierSegment)(t::UnitParam) = evaluate(γ, t)
+(γ::CubicBezierSegment)(s::Unitful.Length) = evaluate(γ, s)
 end # module
