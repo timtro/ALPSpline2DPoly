@@ -23,10 +23,11 @@ using Roots
 using StaticArrays
 using LinearAlgebra
 
-export Vec2, Vec3, UnitParam, LinearSegment, CubicBezierSegment, evaluate
+export Vec, Vec2, Vec3, UnitParam, LinearSegment, CubicBezierSegment, evaluate
 
-const Vec2 = SVector{2,Float64}
-const Vec3 = SVector{3,Float64}
+const Vec = SVector{N,Float64} where {N}
+const Vec2 = Vec{2}
+const Vec3 = Vec{3}
 
 const num_tol = 1e-12
 
@@ -165,10 +166,10 @@ end # module util
 
 using .util: t_to_s, s_to_t
 
-function evaluate(seg::LinearSegment, t::UnitParam)::SVector
+function evaluate(seg::LinearSegment, t::UnitParam)::Vec
   seg.p0 + t * (seg.p1 - seg.p0)
 end
-function evaluate(seg::LinearSegment, s::Unitful.Length)::SVector
+function evaluate(seg::LinearSegment, s::Unitful.Length)::Vec
   t = UnitParam(s / seg.length)
   seg.p0 + t * (seg.p1 - seg.p0)
 end
@@ -177,15 +178,32 @@ end
 (γ::LinearSegment)(s::Unitful.Length) = evaluate(γ, s)
 
 
-function evaluate(seg::CubicBezierSegment, t::UnitParam)::SVector
+function evaluate(seg::CubicBezierSegment, t::UnitParam)::Vec
   t′ = 1.0 - t
   t′^3 * seg.p0 + 3t′^2 * t * seg.p1 + 3t′ * t^2 * seg.p2 + t^3 * seg.p3
 end
 
-function evaluate(seg::CubicBezierSegment, s::Unitful.Length)::SVector
+function evaluate(seg::CubicBezierSegment, s::Unitful.Length)::Vec
   return evaluate(seg, s_to_t(seg, s))
 end
 
 (γ::CubicBezierSegment)(t::UnitParam) = evaluate(γ, t)
 (γ::CubicBezierSegment)(s::Unitful.Length) = evaluate(γ, s)
+
+
+function velocity(γ::LinearSegment, ::UnitParam)::Vec
+  return (γ.p1 - γ.p0)
+end
+function velocity(γ::LinearSegment, ::Unitful.Length)::Vec
+  return normalize(γ.p1 - γ.p0)
+end
+
+function velocity(γ::CubicBezierSegment, t::UnitParam)::Vec
+  t′ = 1.0 - t
+  p₀, p₁, p₂, p₃ = γ.p0, γ.p1, γ.p2, γ.p3
+  return 3t′^2 * (p₁ - p₀) + 6t′ * t * (p₂ - p₁) + 3t^2 * (p₃ - p₂)
+end
+function velocity(γ::CubicBezierSegment, s::Unitful.Length)::Vec
+  return normalize(velocity(γ, s_to_t(γ, s)))
+end
 end # module

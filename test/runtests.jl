@@ -95,7 +95,7 @@ end
     @test γ(UnitParam(1)) ≈ p₁
   end
   @testset "CubicBezierSegment evaluation on UnitParam with known points" begin
-    p₀::Vec2, p₁::Vec2, p₂::Vec2, p₃::Vec2 = (0, 0), (1, 1), (2, -1), (3, 0)
+    p₀::Vec, p₁::Vec, p₂::Vec, p₃::Vec = (0, 0), (1, 1), (2, -1), (3, 0)
     γ = CubicBezierSegment(p₀, p₁, p₂, p₃)
 
     @test γ(UnitParam(0)) ≈ p₀
@@ -103,27 +103,27 @@ end
   end
   @testset "LinearSegment evaluation on arclength, with known endpoints" begin
     γ = LinearSegment((0, 0), (1, 1))
-    @test evaluate(γ, 0 * u"m") ≈ Vec2(0, 0)
-    @test evaluate(γ, γ.length / 2) ≈ Vec2(0.5, 0.5)
-    @test evaluate(γ, γ.length) ≈ Vec2(1, 1)
+    @test evaluate(γ, 0 * u"m") ≈ Vec(0, 0)
+    @test evaluate(γ, γ.length / 2) ≈ Vec(0.5, 0.5)
+    @test evaluate(γ, γ.length) ≈ Vec(1, 1)
 
-    @test γ(0 * u"m") ≈ Vec2(0, 0)
-    @test γ(γ.length / 2) ≈ Vec2(0.5, 0.5)
-    @test γ(γ.length) ≈ Vec2(1, 1)
+    @test γ(0 * u"m") ≈ Vec(0, 0)
+    @test γ(γ.length / 2) ≈ Vec(0.5, 0.5)
+    @test γ(γ.length) ≈ Vec(1, 1)
   end
   @testset "CubicBezierSegment evaluation on arclength with known points" begin
-    p₀::Vec2, p₁::Vec2, p₂::Vec2, p₃::Vec2 = (0, 0), (1, 1), (2, -1), (3, 0)
+    p₀::Vec, p₁::Vec, p₂::Vec, p₃::Vec = (0, 0), (1, 1), (2, -1), (3, 0)
     γ = CubicBezierSegment(p₀, p₁, p₂, p₃)
     @test γ(0 * u"m") ≈ p₀
 
     t, err = numerical_s_to_t_with_err(γ, γ.length / 4)
     @test norm(γ(γ.length / 4) - γ(t)) ≤ 2E-2
 
-    @test γ(γ.length / 2) ≈ Vec2(1.5, 0)
+    @test γ(γ.length / 2) ≈ Vec(1.5, 0)
     @test γ(γ.length) ≈ p₃
   end
   @testset "CubicBezierSegment t_to_s Mean Absolute Error (MAE) on known curve" begin
-    p₀::Vec2, p₁::Vec2, p₂::Vec2, p₃::Vec2 = (0, 0), (1, 1), (2, -1), (3, 0)
+    p₀::Vec, p₁::Vec, p₂::Vec, p₃::Vec = (0, 0), (1, 1), (2, -1), (3, 0)
     γ = CubicBezierSegment(p₀, p₁, p₂, p₃)
 
     @test t_to_s_mean_absolute_error(γ) ≤ 2E-2
