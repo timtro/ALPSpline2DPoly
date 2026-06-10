@@ -121,35 +121,31 @@ struct CubicBezierSegment
   end
 end
 
-function evaluate(seg::LinearSegment, t::UnitParam)::Vec2
-  seg.p0 + t * (seg.p1 - seg.p0)
-end
+module util
+using Unitful
+using ..ALPSpline2DPoly: UnitParam, CubicBezierSegment
 
-function evaluate(seg::LinearSegment, s::Unitful.Length)::Vec2
-  t = UnitParam(s / seg.length)
-  seg.p0 + t * (seg.p1 - seg.p0)
-end
+export t_to_s, s_to_t
 
-(seg::LinearSegment)(t::UnitParam) = evaluate(seg, t)
-(seg::LinearSegment)(s::Unitful.Length) = evaluate(seg, s)
-
-function s_to_t(seg::CubicBezierSegment, s::Unitful.Length)
-  0 ≤ s ≤ seg.length || throw(DomainError(s, "s_to_t(seg, s) requires value s ∈ [0, seg.length]"))
-  if (s == 0.0)
+function s_to_t(seg::CubicBezierSegment, s::Unitful.Length)::UnitParam
+  0 * u"m" ≤ s ≤ seg.length || throw(DomainError(s, "s_to_t(seg, s) requires value s ∈ [0, seg.length]"))
+  if (s == 0.0 * u"m")
     return UnitParam(0.0)
   end
   if (s == seg.length)
     return UnitParam(1.0)
   end
 
-  α = seg.s_to_t_coeff[1]
-  β = seg.s_to_t_coeff[2]
-  γ = seg.s_to_t_coeff[3]
+  α, β, γ = seg.s_to_t_coeff[1], seg.s_to_t_coeff[2], seg.s_to_t_coeff[3]
 
-  return α * s * s * s + β * s * s + γ * s
+  s = ustrip(s)
+  s² = s * s
+  s³ = s² * s
+
+  return UnitParam(α * s³ + β * s² + γ * s)
 end
 
-function t_to_s(seg::CubicBezierSegment, t::UnitParam)
+function t_to_s(seg::CubicBezierSegment, t::UnitParam)::Unitful.Length
   if (t == 0.0)
     return 0u"m"
   end
@@ -164,15 +160,32 @@ function t_to_s(seg::CubicBezierSegment, t::UnitParam)
   t² = t * t
   t³ = t² * t
 
-  return α * t³ + β * t² + γ * t
+  return (α * t³ + β * t² + γ * t) * u"m"
 end
+end # module util
+
+using .util: t_to_s, s_to_t
+
+function evaluate(seg::LinearSegment, t::UnitParam)::Vec2
+  seg.p0 + t * (seg.p1 - seg.p0)
+end
+
+function evaluate(seg::LinearSegment, s::Unitful.Length)::Vec2
+  t = UnitParam(s / seg.length)
+  seg.p0 + t * (seg.p1 - seg.p0)
+end
+
+(seg::LinearSegment)(t::UnitParam) = evaluate(seg, t)
+(seg::LinearSegment)(s::Unitful.Length) = evaluate(seg, s)
+
 
 function evaluate(seg::CubicBezierSegment, t::UnitParam)::Vec2
   t′ = 1.0 - t
   t′^3 * seg.p0 + 3t′^2 * t * seg.p1 + 3t′ * t^2 * seg.p2 + t^3 * seg.p3
 end
+
 function evaluate(seg::CubicBezierSegment, s::Unitful.Length)::Vec2
-  error("unimplemented")
+  return evaluate(seg, s_to_t(seg, s))
 end
 
 (seg::CubicBezierSegment)(t::UnitParam) = evaluate(seg, t)
