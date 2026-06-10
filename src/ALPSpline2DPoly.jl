@@ -15,6 +15,7 @@ Reference:
 """
 module ALPSpline2DPoly
 
+using Unitful: Unit
 using Unitful
 using QuadGK: quadgk
 using Roots
@@ -124,9 +125,7 @@ end
 module util
 using Unitful
 using ..ALPSpline2DPoly: UnitParam, CubicBezierSegment
-
 export t_to_s, s_to_t
-
 function s_to_t(seg::CubicBezierSegment, s::Unitful.Length)::UnitParam
   0 * u"m" ≤ s ≤ seg.length || throw(DomainError(s, "s_to_t(seg, s) requires value s ∈ [0, seg.length]"))
   if (s == 0.0 * u"m")
@@ -138,7 +137,7 @@ function s_to_t(seg::CubicBezierSegment, s::Unitful.Length)::UnitParam
 
   α, β, γ = seg.s_to_t_coeff[1], seg.s_to_t_coeff[2], seg.s_to_t_coeff[3]
 
-  s = ustrip(s)
+  s = ustrip(u"m", s)
   s² = s * s
   s³ = s² * s
 
@@ -166,11 +165,10 @@ end # module util
 
 using .util: t_to_s, s_to_t
 
-function evaluate(seg::LinearSegment, t::UnitParam)::Vec2
+function evaluate(seg::LinearSegment, t::UnitParam)::SVector
   seg.p0 + t * (seg.p1 - seg.p0)
 end
-
-function evaluate(seg::LinearSegment, s::Unitful.Length)::Vec2
+function evaluate(seg::LinearSegment, s::Unitful.Length)::SVector
   t = UnitParam(s / seg.length)
   seg.p0 + t * (seg.p1 - seg.p0)
 end
@@ -179,12 +177,12 @@ end
 (γ::LinearSegment)(s::Unitful.Length) = evaluate(γ, s)
 
 
-function evaluate(seg::CubicBezierSegment, t::UnitParam)::Vec2
+function evaluate(seg::CubicBezierSegment, t::UnitParam)::SVector
   t′ = 1.0 - t
   t′^3 * seg.p0 + 3t′^2 * t * seg.p1 + 3t′ * t^2 * seg.p2 + t^3 * seg.p3
 end
 
-function evaluate(seg::CubicBezierSegment, s::Unitful.Length)::Vec2
+function evaluate(seg::CubicBezierSegment, s::Unitful.Length)::SVector
   return evaluate(seg, s_to_t(seg, s))
 end
 

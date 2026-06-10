@@ -25,7 +25,7 @@ estimate of the residual from the Newton iteration.
 """
 function numerical_s_to_t_with_err(seg::CubicBezierSegment, s::Unitful.Length)
   p₀, p₁, p₂, p₃ = seg.p0, seg.p1, seg.p2, seg.p3
-  s′ = ustrip(s)
+  s′ = ustrip(u"m", s)
   speed = t -> norm(3 * (1 - t)^2 * (p₁ - p₀) + 6 * (1 - t) * t * (p₂ - p₁) + 3 * t^2 * (p₃ - p₂))
   newton = function (atol=1e-10, maxiter=50)
     t = ustrip(seg.length) / s′
@@ -49,7 +49,7 @@ function t_to_s_mean_absolute_error(seg::CubicBezierSegment)::Float64
   e = function (t::Float64)
     return abs(
       (quadgk(speed, 0.0, t, rtol=rtol)[1]) -
-      ustrip(t_to_s(seg, UnitParam(t)))
+      ustrip(u"m", t_to_s(seg, UnitParam(t)))
     )
   end
 
@@ -62,7 +62,7 @@ function t_to_s_max_absolute_error(seg::CubicBezierSegment)
   e = function (t::Float64)
     return abs(
       (quadgk(speed, 0.0, t, rtol=rtol)[1]) -
-      ustrip(t_to_s(seg, UnitParam(t)))
+      ustrip(u"m", t_to_s(seg, UnitParam(t)))
     )
   end
 
