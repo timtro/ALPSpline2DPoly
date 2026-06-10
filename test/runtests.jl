@@ -67,7 +67,11 @@ function t_to_s_max_absolute_error(seg::CubicBezierSegment)
   end
 
   result = optimize(t -> -e(t), 0.0, 1.0, Brent())
-  return -Optim.minimum(result)
+  if Optim.converged(result)
+    return -Optim.minimum(result)
+  else
+    throw(ErrorException("t_to_s_max_absolute_error failed to converge."))
+  end
 end
 
 @testset verbose = true "ALPSpline2DPoly" begin
