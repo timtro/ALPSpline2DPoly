@@ -23,7 +23,7 @@ using Roots
 using StaticArrays
 using LinearAlgebra
 
-export Vec, Vec2, Vec3, UnitParam, LinearSegment, CubicBezierSegment, evaluate
+export Vec, Vec2, Vec3, UnitParam, LinearSegment, CubicBezierSegment, evaluate, velocity, acceleration
 
 const Vec = SVector{N,Float64} where {N}
 const Vec2 = Vec{2}
@@ -49,6 +49,7 @@ for op in (:+, :-, :*, :/)
   @eval ($op)(a::UnitParam, b::SVector) = ($op)(a.value, b)
 end
 Base.:^(a::UnitParam, b::Real) = a.value^b
+Base.:isapprox(a::UnitParam, b::UnitParam; kwargs...) = isapprox(a.value, b.value; kwargs...)
 
 (==)(a::UnitParam, b::UnitParam) = a.value == b.value
 (<)(a::UnitParam, b::UnitParam) = a.value < b.value
@@ -146,10 +147,10 @@ function s_to_t(seg::CubicBezierSegment, s::Unitful.Length)::UnitParam
 end
 
 function t_to_s(seg::CubicBezierSegment, t::UnitParam)::Unitful.Length
-  if (t == 0.0)
+  if (t.value == 0.0)
     return 0u"m"
   end
-  if (t == 1.0)
+  if (t.value == 1.0)
     return seg.length
   end
 
@@ -205,5 +206,32 @@ function velocity(γ::CubicBezierSegment, t::UnitParam)::Vec
 end
 function velocity(γ::CubicBezierSegment, s::Unitful.Length)::Vec
   return normalize(velocity(γ, s_to_t(γ, s)))
+end
+
+
+function acceleration(::LinearSegment, ::UnitParam)::Vec
+  return zero(Vec2)   # or zeros(SVector{N,Float64}) if N is known
+end
+
+function acceleration(::LinearSegment, ::Unitful.Length)::Vec
+  return zero(Vec2)
+end
+
+function acceleration(γ::CubicBezierSegment, t::UnitParam)::Vec
+  t′ = 1.0 - t
+  p₀, p₁, p₂, p₃ = γ.p0, γ.p1, γ.p2, γ.p3
+  return 6(t′ * (p₀ - p₁) + (t′ - t) * (p₂ - p₁) + t * (p₃ - p₂))
+end
+
+function acceleration(γ::CubicBezierSegment, s::Unitful.Length)::Vec
+  t = s_to_t(γ, s)
+  B′ = velocity(γ, t)
+  speed = norm(B′)
+  speed ≤ num_tol && return zero(Vec2)
+
+  B″ = acceleration(γ, t)
+  speed′ = dot(B′, B″) / speed
+
+  return B″ / speed^2 - B′ * speed′ / speed^3
 end
 end # module
