@@ -185,12 +185,12 @@ const quarter_unit_circle = make_quarter_unit_circle()
     @test t_to_s(quarter_unit_circle, UnitParam(1.0)) - π / 2.0 * u"m" ≤ atol * u"m"
 
     halfway = s_to_t(quarter_unit_circle, π / 4.0 * u"m")
-    @test isapprox(halfway.value, UnitParam(0.5).value, atol=atol_relaxed)
+    @test halfway ≈ UnitParam(0.5) atol = atol_relaxed
     #
     for t in UnitParam.([0.1, 0.25, 0.5, 0.75, 0.9])
       s = t_to_s(quarter_unit_circle, t)
       recovered = s_to_t(quarter_unit_circle, s)
-      @test isapprox(recovered, t, atol=atol_very_relaxed)
+      @test recovered ≈ t atol = atol_very_relaxed
     end
   end
   @testset "Velocity of LinearSegment over UnitParam is just length" begin
@@ -215,7 +215,7 @@ const quarter_unit_circle = make_quarter_unit_circle()
       θ = t.value * π / 2
       expected = (π / 2) * Vec(-sin(θ), cos(θ))
       actual = velocity(quarter_circle, t)
-      @test isapprox(norm(cross(actual, expected)), 0, atol=2E-2)
+      @test norm(cross(actual, expected)) ≈ 0 atol = 2E-2
     end
   end
   @testset "Velocity of CubicBezierSegment over arclength on quarter-circle" begin
@@ -223,7 +223,7 @@ const quarter_unit_circle = make_quarter_unit_circle()
       θ = ustrip(s)
       expected = (π / 2) * Vec(-sin(θ), cos(θ))
       actual = velocity(quarter_circle, s)
-      @test isapprox(norm(cross(actual, expected)), 0, atol=2E-2)
+      @test norm(cross(actual, expected)) ≈ 0 atol = 2E-2
     end
   end
   @testset "Acceleration of LinearSegment over arclength is the zero-vector." begin
@@ -237,7 +237,7 @@ const quarter_unit_circle = make_quarter_unit_circle()
       θ = t.value * π / 2
       expected = (π / 2) * Vec(-sin(θ), cos(θ))
       actual = velocity(quarter_circle, t)
-      @test isapprox(norm(cross(actual, expected)), 0, atol=2E-2)
+      @test norm(cross(actual, expected)) ≈ 0 atol = 2E-2
     end
   end
   # NB: This test couples t_to_s with pos, vel and acc testing.
