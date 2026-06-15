@@ -193,65 +193,65 @@ const quarter_unit_circle = make_quarter_unit_circle()
       @test recovered ≈ t atol = atol_very_relaxed
     end
   end
-  @testset "Velocity of LinearSegment over UnitParam is just length" begin
+  @testset "first_derivative of LinearSegment over UnitParam is just length" begin
     p₀::Vec2, p₁::Vec2 = randn(Float64, 2), randn(Float64, 2)
     γ = LinearSegment(p₀, p₁)
 
     for t in UnitParam.([0.0, 0.1, 0.25, 0.5, 0.75, 0.9, 1.0])
-      @test velocity(γ, t) == p₁ - p₀
+      @test first_derivative(γ, t) == p₁ - p₀
     end
   end
-  @testset "Velocity of LinearSegment over arclength is the tangent." begin
+  @testset "first_derivative of LinearSegment over arclength is the tangent." begin
     p₀::Vec2, p₁::Vec2 = randn(Float64, 2), randn(Float64, 2)
     γ = LinearSegment(p₀, p₁)
 
     for s in [0.0, 0.1, 0.25, 0.5, 0.75, 0.9, 1.0] * γ.length
-      @test velocity(γ, s) ≈ (p₁ - p₀) / norm(p₁ - p₀)
-      # @test velocity(γ, t) ≈ normalize(p₁ - p₀)
+      @test first_derivative(γ, s) ≈ (p₁ - p₀) / norm(p₁ - p₀)
+      # @test first_derivative(γ, t) ≈ normalize(p₁ - p₀)
     end
   end
-  @testset "Velocity of CubicBezierSegment over UnitParam on quarter-circle" begin
+  @testset "first_derivative of CubicBezierSegment over UnitParam on quarter-circle" begin
     for t in UnitParam.([0.0, 0.1, 0.25, 0.5, 0.75, 0.9, 1.0])
       θ = t.value * π / 2
       expected = (π / 2) * Vec(-sin(θ), cos(θ))
-      actual = velocity(quarter_circle, t)
+      actual = first_derivative(quarter_circle, t)
       @test norm(cross(actual, expected)) ≈ 0 atol = 2E-2
     end
   end
-  @testset "Velocity of CubicBezierSegment over arclength on quarter-circle" begin
+  @testset "first_derivative of CubicBezierSegment over arclength on quarter-circle" begin
     for s in [0.0, 0.1, 0.25, 0.5, 0.75, 0.9, 1.0] * quarter_circle.length
       θ = ustrip(s)
       expected = (π / 2) * Vec(-sin(θ), cos(θ))
-      actual = velocity(quarter_circle, s)
+      actual = first_derivative(quarter_circle, s)
       @test norm(cross(actual, expected)) ≈ 0 atol = 2E-2
     end
   end
-  @testset "Acceleration of LinearSegment over arclength is the zero-vector." begin
+  @testset "second_derivative of LinearSegment over arclength is the zero-vector." begin
     p₀::Vec2, p₁::Vec2 = randn(Float64, 2), randn(Float64, 2)
     γ = LinearSegment(p₀, p₁)
 
-    @test acceleration(γ, UnitParam(0.5)) == Vec(0.0, 0.0)
+    @test second_derivative(γ, UnitParam(0.5)) == Vec(0.0, 0.0)
   end
-  @testset "Acceleration of CubicBezierSegment over UnitParam on quarter-circle" begin
+  @testset "second_derivative of CubicBezierSegment over UnitParam on quarter-circle" begin
     for t in UnitParam.([0.0, 0.1, 0.25, 0.5, 0.75, 0.9, 1.0])
       θ = t.value * π / 2
       expected = (π / 2) * Vec(-sin(θ), cos(θ))
-      actual = velocity(quarter_circle, t)
+      actual = first_derivative(quarter_circle, t)
       @test norm(cross(actual, expected)) ≈ 0 atol = 2E-2
     end
   end
   # NB: This test couples t_to_s with pos, vel and acc testing.
   # Tighter tolerances may be achieved working directly in UnitParam,
   # but this is a broader integration test, and the expense of more targetd
-  # unit testing of acceleration.
-  @testset "Acceleration of CubicBezierSegment on quarter-circle" begin
+  # unit testing of second_derivative.
+  @testset "second_derivative of CubicBezierSegment on quarter-circle" begin
     γ = quarter_circle
 
     for t in UnitParam.([0.0, 0.1, 0.25, 0.5, 0.75, 0.9, 1.0])
       s = t_to_s(γ, t)
       pos = evaluate(γ, s)
-      vel = velocity(γ, s)
-      acc = acceleration(γ, s)
+      vel = first_derivative(γ, s)
+      acc = second_derivative(γ, s)
 
       r = norm(pos)
       acc_mag = norm(acc)
@@ -263,12 +263,12 @@ const quarter_unit_circle = make_quarter_unit_circle()
     end
 
     # Extra checks at endpoints (where curvature is well-defined)
-    @testset "Endpoint acceleration" begin
-      acc₀ = acceleration(γ, 0.0 * u"m")
+    @testset "Endpoint second_derivative" begin
+      acc₀ = second_derivative(γ, 0.0 * u"m")
       @test acc₀[1] < -0.9
       @test abs(acc₀[2]) < 5E-2
 
-      acc₁ = acceleration(γ, γ.length)
+      acc₁ = second_derivative(γ, γ.length)
       @test abs(acc₁[1]) < 5E-2
       @test acc₁[2] < -0.9
     end

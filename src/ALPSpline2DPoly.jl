@@ -23,7 +23,7 @@ using Roots
 using StaticArrays
 using LinearAlgebra
 
-export Vec, Vec2, Vec3, UnitParam, LinearSegment, CubicBezierSegment, evaluate, velocity, acceleration
+export Vec, Vec2, Vec3, UnitParam, LinearSegment, CubicBezierSegment, evaluate, first_derivative, second_derivative
 
 const Vec = SVector{N,Float64} where {N}
 const Vec2 = Vec{2}
@@ -192,46 +192,48 @@ end
 (γ::CubicBezierSegment)(s::Unitful.Length) = evaluate(γ, s)
 
 
-function velocity(γ::LinearSegment, ::UnitParam)::Vec
+function first_derivative(γ::LinearSegment, ::UnitParam)::Vec
   return (γ.p1 - γ.p0)
 end
-function velocity(γ::LinearSegment, ::Unitful.Length)::Vec
+function first_derivative(γ::LinearSegment, ::Unitful.Length)::Vec
   return normalize(γ.p1 - γ.p0)
 end
 
-function velocity(γ::CubicBezierSegment, t::UnitParam)::Vec
+function first_derivative(γ::CubicBezierSegment, t::UnitParam)::Vec
   t′ = 1.0 - t
   p₀, p₁, p₂, p₃ = γ.p0, γ.p1, γ.p2, γ.p3
   return 3t′^2 * (p₁ - p₀) + 6t′ * t * (p₂ - p₁) + 3t^2 * (p₃ - p₂)
 end
-function velocity(γ::CubicBezierSegment, s::Unitful.Length)::Vec
-  return normalize(velocity(γ, s_to_t(γ, s)))
+function first_derivative(γ::CubicBezierSegment, s::Unitful.Length)::Vec
+  return normalize(first_derivative(γ, s_to_t(γ, s)))
 end
 
 
-function acceleration(::LinearSegment, ::UnitParam)::Vec
+function second_derivative(::LinearSegment, ::UnitParam)::Vec
   return zero(Vec2)   # or zeros(SVector{N,Float64}) if N is known
 end
 
-function acceleration(::LinearSegment, ::Unitful.Length)::Vec
+function second_derivative(::LinearSegment, ::Unitful.Length)::Vec
   return zero(Vec2)
 end
 
-function acceleration(γ::CubicBezierSegment, t::UnitParam)::Vec
+function second_derivative(γ::CubicBezierSegment, t::UnitParam)::Vec
   t′ = 1.0 - t
   p₀, p₁, p₂, p₃ = γ.p0, γ.p1, γ.p2, γ.p3
   return 6(t′ * (p₀ - p₁) + (t′ - t) * (p₂ - p₁) + t * (p₃ - p₂))
 end
 
-function acceleration(γ::CubicBezierSegment, s::Unitful.Length)::Vec
+function second_derivative(γ::CubicBezierSegment, s::Unitful.Length)::Vec
   t = s_to_t(γ, s)
-  B′ = velocity(γ, t)
+  B′ = first_derivative(γ, t)
   speed = norm(B′)
   speed ≤ num_tol && return zero(Vec2)
 
-  B″ = acceleration(γ, t)
+  B″ = second_derivative(γ, t)
   speed′ = dot(B′, B″) / speed
 
+  # The extra math is the chain rule applied twice, to scale
+  # the acceleration WRT the unit-parameter to acceleration wrt arc-length.
   return B″ / speed^2 - B′ * speed′ / speed^3
 end
 end # module
